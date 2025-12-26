@@ -31,6 +31,7 @@ import { mockEmployees, mockAuditLogs } from '@/lib/mock-data';
 import { Employee, AuditLogEntry, DashboardStats } from '@/lib/types';
 import { format, formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 export default function DashboardPage() {
   const [employees, setEmployees] = useLocalStorage<Employee[]>('octomate_employees', []);
@@ -225,13 +226,32 @@ export default function DashboardPage() {
           </Link>
         )}
         {canImport() && (
-          <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 hover:border-[#00A651] hover:text-[#00A651]">
+          <Button 
+            variant="outline" 
+            className="w-full h-auto py-4 flex flex-col gap-2 hover:border-[#00A651] hover:text-[#00A651] cursor-pointer"
+            onClick={() => toast.info('Bulk import feature coming soon')}
+          >
             <Upload className="h-5 w-5" />
             <span className="text-sm">Bulk Import</span>
           </Button>
         )}
         {canExport() && (
-          <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 hover:border-[#00A651] hover:text-[#00A651]">
+          <Button 
+            variant="outline" 
+            className="w-full h-auto py-4 flex flex-col gap-2 hover:border-[#00A651] hover:text-[#00A651] cursor-pointer"
+            onClick={() => {
+              const blob = new Blob([JSON.stringify(employees, null, 2)], { type: 'application/json' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `employees-export-${new Date().toISOString().split('T')[0]}.json`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+              toast.success(`Exported ${employees.length} employees`);
+            }}
+          >
             <Download className="h-5 w-5" />
             <span className="text-sm">Export Data</span>
           </Button>

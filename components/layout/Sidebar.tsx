@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   Users,
@@ -131,17 +132,28 @@ export function Sidebar() {
         {/* Bottom section */}
         <div className="mt-auto">
           <div className="rounded-lg bg-gradient-to-br from-[#00A651]/10 to-[#00A651]/5 p-4 border border-[#00A651]/20">
-            <h4 className="font-semibold text-sm mb-1">PM Assessment Demo</h4>
+            <div className="flex items-center gap-2 mb-2">
+              <Image
+                src="/logo.jpeg"
+                alt="Octomate Logo"
+                width={24}
+                height={24}
+                className="rounded"
+              />
+              <h4 className="font-semibold text-sm">PM Assessment Demo</h4>
+            </div>
             <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
               This is a demonstration of the Octomate HR system capabilities.
             </p>
-            <Button
-              size="sm"
-              variant="outline"
-              className="w-full text-[#00A651] border-[#00A651]/30 hover:bg-[#00A651]/10"
-            >
-              Learn More
-            </Button>
+            <Link href="/settings">
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full text-[#00A651] border-[#00A651]/30 hover:bg-[#00A651]/10"
+              >
+                Learn More
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

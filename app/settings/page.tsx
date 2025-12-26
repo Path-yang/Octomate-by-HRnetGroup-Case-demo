@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -303,9 +304,13 @@ export default function SettingsPage() {
           {/* About */}
           <Card className="bg-gradient-to-br from-[#00A651]/5 to-[#00A651]/10 border-[#00A651]/20">
             <CardContent className="p-6 text-center">
-              <div className="h-16 w-16 rounded-2xl bg-[#00A651] flex items-center justify-center mx-auto mb-4">
-                <span className="text-white font-bold text-2xl">O</span>
-              </div>
+              <Image
+                src="/logo.jpeg"
+                alt="Octomate Logo"
+                width={64}
+                height={64}
+                className="rounded-2xl mx-auto mb-4"
+              />
               <h3 className="font-bold text-lg mb-1">Octomate by HRnet</h3>
               <p className="text-sm text-gray-500 mb-4">
                 Singapore&apos;s Leading HR Tech Solution

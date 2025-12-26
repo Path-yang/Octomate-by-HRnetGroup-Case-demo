@@ -431,14 +431,14 @@ export function EmployeeList({ employees, isLoading = false, onExport }: Employe
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
-                        <Link href={`/employees/${employee.id}`}>
+                        <Link href={`/employees/${employee.id}`} className="cursor-pointer">
                           <Eye className="h-4 w-4 mr-2" />
                           View Profile
                         </Link>
                       </DropdownMenuItem>
                       {canEdit(employee.id) && (
                         <DropdownMenuItem asChild>
-                          <Link href={`/employees/${employee.id}?edit=true`}>
+                          <Link href={`/employees/${employee.id}?edit=true`} className="cursor-pointer">
                             <Edit className="h-4 w-4 mr-2" />
                             Edit Profile
                           </Link>

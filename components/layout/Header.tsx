@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   Users,
@@ -77,9 +78,13 @@ export function Header() {
           </SheetTrigger>
           <SheetContent side="left" className="w-72">
             <div className="flex items-center gap-2 mb-8">
-              <div className="h-8 w-8 rounded-lg bg-[#00A651] flex items-center justify-center">
-                <span className="text-white font-bold text-sm">O</span>
-              </div>
+              <Image
+                src="/logo.jpeg"
+                alt="Octomate Logo"
+                width={32}
+                height={32}
+                className="rounded-lg"
+              />
               <span className="font-bold text-lg">Octomate</span>
             </div>
             <nav className="flex flex-col gap-2">
@@ -105,9 +110,13 @@ export function Header() {
 
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 mr-6">
-          <div className="h-8 w-8 rounded-lg bg-[#00A651] flex items-center justify-center">
-            <span className="text-white font-bold text-sm">O</span>
-          </div>
+          <Image
+            src="/logo.jpeg"
+            alt="Octomate Logo"
+            width={32}
+            height={32}
+            className="rounded-lg"
+          />
           <span className="font-bold text-lg hidden sm:block">Octomate</span>
           <Badge variant="secondary" className="hidden sm:flex text-[10px] px-1.5 py-0">
             by HRnet
@@ -218,12 +227,16 @@ export function Header() {
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <Link href={`/employees/${currentUser.employeeId}`}>View My Profile</Link>
+              <DropdownMenuItem asChild>
+                <Link href={`/employees/${currentUser.employeeId}`} className="cursor-pointer">
+                  View My Profile
+                </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem>Preferences</DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/settings" className="cursor-pointer">Preferences</Link>
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-red-600">Sign out</DropdownMenuItem>
+              <DropdownMenuItem className="text-red-600 cursor-pointer">Sign out</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
