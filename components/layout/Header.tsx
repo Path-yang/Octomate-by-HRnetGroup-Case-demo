@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import { useTheme } from 'next-themes';
 import {
   Users,
   LayoutDashboard,
@@ -53,12 +54,17 @@ const roleOptions: { role: UserRole; icon: React.ElementType; description: strin
 export function Header() {
   const pathname = usePathname();
   const { currentUser, currentRole, setRole, canViewAudit } = usePermissions();
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Avoid hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
-    document.documentElement.classList.toggle('dark');
+    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
   };
 
   const filteredNavigation = navigation.filter(
@@ -201,7 +207,7 @@ export function Header() {
 
           {/* Dark mode toggle */}
           <Button variant="ghost" size="icon" onClick={toggleDarkMode}>
-            {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            {mounted && resolvedTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
 
           {/* User menu */}
