@@ -6,43 +6,52 @@ import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { EmployeeList } from '@/components/employees/EmployeeList';
 import { UserPlus, Upload } from 'lucide-react';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { usePermissions } from '@/hooks/usePermissions';
 import { mockEmployees } from '@/lib/mock-data';
 import { Employee } from '@/lib/types';
 import { toast } from 'sonner';
 
 export default function EmployeesPage() {
-  const [employees, setEmployees] = useLocalStorage<Employee[]>('octomate_employees', []);
-  const [isLoading, setIsLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
+  const [employees, setEmployees] = useState<Employee[]>([]);
 
-  const { canAdd, canImport, currentRole } = usePermissions();
+  const { canAdd, canImport } = usePermissions();
 
-  // Initialize with mock data if empty
+  // Initialize data on mount
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (employees.length === 0) {
+    try {
+      const storedEmployees = localStorage.getItem('octomate_employees');
+      if (storedEmployees) {
+        setEmployees(JSON.parse(storedEmployees));
+      } else {
         setEmployees(mockEmployees);
+        localStorage.setItem('octomate_employees', JSON.stringify(mockEmployees));
       }
-      setIsLoading(false);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [employees.length, setEmployees]);
+    } catch (error) {
+      console.error('Error loading employees:', error);
+      setEmployees(mockEmployees);
+    }
+    setMounted(true);
+  }, []);
 
   const handleExport = (ids: string[]) => {
-    const dataToExport = employees.filter((emp) => ids.includes(emp.id));
-    const blob = new Blob([JSON.stringify(dataToExport, null, 2)], {
-      type: 'application/json',
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `employees-export-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    try {
+      const dataToExport = employees.filter((emp) => ids.includes(emp.id));
+      const blob = new Blob([JSON.stringify(dataToExport, null, 2)], {
+        type: 'application/json',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `employees-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success(`Exported ${dataToExport.length} employees`);
+    } catch (error) {
+      toast.error('Failed to export data');
+    }
   };
 
   return (
@@ -71,8 +80,7 @@ export default function EmployeesPage() {
         }
       />
 
-      <EmployeeList employees={employees} isLoading={isLoading} onExport={handleExport} />
+      <EmployeeList employees={employees} isLoading={!mounted} onExport={handleExport} />
     </div>
   );
 }
-

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { ProfileForm } from '@/components/employees/ProfileForm';
 import { Shield, AlertTriangle, ArrowLeft } from 'lucide-react';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Employee, AuditLogEntry } from '@/lib/types';
 import { generateEmployeeId } from '@/lib/validations';
@@ -20,12 +19,40 @@ import Link from 'next/link';
 
 export default function NewEmployeePage() {
   const router = useRouter();
-  const [employees, setEmployees] = useLocalStorage<Employee[]>('octomate_employees', mockEmployees);
-  const [auditLogs, setAuditLogs] = useLocalStorage<AuditLogEntry[]>('octomate_audit_logs', mockAuditLogs);
+  const [mounted, setMounted] = useState(false);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
   const [pdpaConsent, setPdpaConsent] = useState(false);
   const [showForm, setShowForm] = useState(false);
 
   const { currentUser, currentRole, canAdd } = usePermissions();
+
+  // Initialize data on mount
+  useEffect(() => {
+    try {
+      const storedEmployees = localStorage.getItem('octomate_employees');
+      const storedLogs = localStorage.getItem('octomate_audit_logs');
+      
+      if (storedEmployees) {
+        setEmployees(JSON.parse(storedEmployees));
+      } else {
+        setEmployees(mockEmployees);
+        localStorage.setItem('octomate_employees', JSON.stringify(mockEmployees));
+      }
+      
+      if (storedLogs) {
+        setAuditLogs(JSON.parse(storedLogs));
+      } else {
+        setAuditLogs(mockAuditLogs);
+        localStorage.setItem('octomate_audit_logs', JSON.stringify(mockAuditLogs));
+      }
+    } catch (error) {
+      console.error('Error loading data:', error);
+      setEmployees(mockEmployees);
+      setAuditLogs(mockAuditLogs);
+    }
+    setMounted(true);
+  }, []);
 
   // Check permission
   if (!canAdd()) {
@@ -52,6 +79,15 @@ export default function NewEmployeePage() {
             </Button>
           </Link>
         </div>
+      </div>
+    );
+  }
+
+  if (!mounted) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="h-10 w-48 bg-gray-200 rounded animate-pulse" />
+        <div className="max-w-2xl h-96 bg-gray-200 rounded-xl animate-pulse" />
       </div>
     );
   }
@@ -85,34 +121,42 @@ export default function NewEmployeePage() {
   };
 
   const handleSave = (employee: Employee) => {
-    const savedEmployee = {
-      ...employee,
-      pdpaConsent: pdpaConsent,
-      pdpaConsentDate: pdpaConsent ? new Date().toISOString() : undefined,
-    };
+    try {
+      const savedEmployee = {
+        ...employee,
+        pdpaConsent: pdpaConsent,
+        pdpaConsentDate: pdpaConsent ? new Date().toISOString() : undefined,
+      };
 
-    setEmployees([...employees, savedEmployee]);
+      const newEmployees = [...employees, savedEmployee];
+      setEmployees(newEmployees);
+      localStorage.setItem('octomate_employees', JSON.stringify(newEmployees));
 
-    const createLog: AuditLogEntry = {
-      id: `audit-${Date.now()}`,
-      employeeId: savedEmployee.id,
-      employeeName: savedEmployee.fullName,
-      timestamp: new Date().toISOString(),
-      userId: currentUser.id,
-      userName: currentUser.name,
-      userRole: currentRole,
-      action: 'create',
-      description: 'Created new employee profile',
-    };
-    setAuditLogs([createLog, ...auditLogs]);
+      const createLog: AuditLogEntry = {
+        id: `audit-${Date.now()}`,
+        employeeId: savedEmployee.id,
+        employeeName: savedEmployee.fullName,
+        timestamp: new Date().toISOString(),
+        userId: currentUser.id,
+        userName: currentUser.name,
+        userRole: currentRole,
+        action: 'create',
+        description: 'Created new employee profile',
+      };
+      const newLogs = [createLog, ...auditLogs];
+      setAuditLogs(newLogs);
+      localStorage.setItem('octomate_audit_logs', JSON.stringify(newLogs));
 
-    toast.success(`Employee ${savedEmployee.fullName} created successfully`);
-    router.push(`/employees/${savedEmployee.id}`);
+      toast.success(`Employee ${savedEmployee.fullName} created successfully`);
+      router.push(`/employees/${savedEmployee.id}`);
+    } catch (error) {
+      toast.error('Failed to create employee');
+    }
   };
 
   if (!showForm) {
     return (
-      <div className="p-6 space-y-6 animate-fade-in">
+      <div className="p-6 space-y-6">
         <PageHeader
           title="Add New Employee"
           description="Create a new employee profile in the system"
@@ -154,7 +198,7 @@ export default function NewEmployeePage() {
               </AlertDescription>
             </Alert>
 
-            <div className="flex items-start space-x-3 p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
+            <div className="flex items-start space-x-3 p-4 border rounded-lg bg-gray-50">
               <Checkbox
                 id="pdpa-consent"
                 checked={pdpaConsent}
@@ -189,7 +233,7 @@ export default function NewEmployeePage() {
   }
 
   return (
-    <div className="p-6 space-y-6 animate-fade-in">
+    <div className="p-6 space-y-6">
       <PageHeader
         title="Add New Employee"
         description="Fill in the employee details below"
@@ -203,4 +247,3 @@ export default function NewEmployeePage() {
     </div>
   );
 }
-

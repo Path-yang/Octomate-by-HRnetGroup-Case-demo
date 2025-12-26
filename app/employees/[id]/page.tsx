@@ -7,7 +7,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Dialog,
@@ -33,12 +32,37 @@ import {
   FileDown,
   AlertTriangle,
 } from 'lucide-react';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { usePermissions } from '@/hooks/usePermissions';
 import { mockEmployees, mockAuditLogs } from '@/lib/mock-data';
 import { Employee, AuditLogEntry, EmploymentStatus } from '@/lib/types';
-import { format } from 'date-fns';
 import { toast } from 'sonner';
+
+// Simple date formatting
+function formatDate(dateString: string): string {
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-SG', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  } catch {
+    return 'Unknown date';
+  }
+}
+
+function formatDateLong(dateString: string): string {
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-SG', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  } catch {
+    return 'Unknown date';
+  }
+}
 
 export default function EmployeeProfilePage() {
   const params = useParams();
@@ -47,9 +71,9 @@ export default function EmployeeProfilePage() {
   const employeeId = params.id as string;
   const editMode = searchParams.get('edit') === 'true';
 
-  const [employees, setEmployees] = useLocalStorage<Employee[]>('octomate_employees', []);
-  const [auditLogs, setAuditLogs] = useLocalStorage<AuditLogEntry[]>('octomate_audit_logs', []);
-  const [isLoading, setIsLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [showPdpaDialog, setShowPdpaDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -59,34 +83,55 @@ export default function EmployeeProfilePage() {
 
   // Initialize and find employee
   useEffect(() => {
-    const timer = setTimeout(() => {
-      let empList = employees;
-      if (employees.length === 0) {
+    try {
+      const storedEmployees = localStorage.getItem('octomate_employees');
+      const storedLogs = localStorage.getItem('octomate_audit_logs');
+      
+      let empList: Employee[];
+      if (storedEmployees) {
+        empList = JSON.parse(storedEmployees);
+      } else {
         empList = mockEmployees;
-        setEmployees(mockEmployees);
+        localStorage.setItem('octomate_employees', JSON.stringify(mockEmployees));
       }
-      if (auditLogs.length === 0) {
-        setAuditLogs(mockAuditLogs);
+      setEmployees(empList);
+      
+      let logList: AuditLogEntry[];
+      if (storedLogs) {
+        logList = JSON.parse(storedLogs);
+      } else {
+        logList = mockAuditLogs;
+        localStorage.setItem('octomate_audit_logs', JSON.stringify(mockAuditLogs));
       }
-
+      setAuditLogs(logList);
+      
       const found = empList.find((e) => e.id === employeeId);
       setEmployee(found || null);
-      setIsLoading(false);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [employeeId, employees, auditLogs, setEmployees, setAuditLogs]);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      setEmployees(mockEmployees);
+      setAuditLogs(mockAuditLogs);
+      const found = mockEmployees.find((e) => e.id === employeeId);
+      setEmployee(found || null);
+    }
+    
+    setMounted(true);
+  }, [employeeId]);
 
   const handleSave = (updatedEmployee: Employee) => {
-    setEmployees(employees.map((e) => (e.id === updatedEmployee.id ? updatedEmployee : e)));
+    const newEmployees = employees.map((e) => (e.id === updatedEmployee.id ? updatedEmployee : e));
+    setEmployees(newEmployees);
     setEmployee(updatedEmployee);
+    localStorage.setItem('octomate_employees', JSON.stringify(newEmployees));
   };
 
   const handleAuditLog = (field: string, oldValue: string, newValue: string) => {
+    if (!employee) return;
+    
     const newLog: AuditLogEntry = {
       id: `audit-${Date.now()}`,
-      employeeId: employee!.id,
-      employeeName: employee!.fullName,
+      employeeId: employee.id,
+      employeeName: employee.fullName,
       timestamp: new Date().toISOString(),
       userId: currentUser.id,
       userName: currentUser.name,
@@ -97,7 +142,9 @@ export default function EmployeeProfilePage() {
       newValue,
       description: `Updated ${field}`,
     };
-    setAuditLogs([newLog, ...auditLogs]);
+    const newLogs = [newLog, ...auditLogs];
+    setAuditLogs(newLogs);
+    localStorage.setItem('octomate_audit_logs', JSON.stringify(newLogs));
   };
 
   const handleExportData = () => {
@@ -106,26 +153,30 @@ export default function EmployeeProfilePage() {
       return;
     }
 
-    const dataToExport = {
-      ...employee,
-      exportedAt: new Date().toISOString(),
-      exportedBy: currentUser.name,
-    };
+    try {
+      const dataToExport = {
+        ...employee,
+        exportedAt: new Date().toISOString(),
+        exportedBy: currentUser.name,
+      };
 
-    const blob = new Blob([JSON.stringify(dataToExport, null, 2)], {
-      type: 'application/json',
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `employee-${employee?.employeeId}-data-export.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+      const blob = new Blob([JSON.stringify(dataToExport, null, 2)], {
+        type: 'application/json',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `employee-${employee?.employeeId}-data-export.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
 
-    toast.success('Data exported successfully (PDPA compliant)');
-    setShowPdpaDialog(false);
+      toast.success('Data exported successfully (PDPA compliant)');
+      setShowPdpaDialog(false);
+    } catch (error) {
+      toast.error('Failed to export data');
+    }
   };
 
   const handleDelete = () => {
@@ -134,20 +185,25 @@ export default function EmployeeProfilePage() {
       return;
     }
 
-    setEmployees(employees.filter((e) => e.id !== employeeId));
+    const newEmployees = employees.filter((e) => e.id !== employeeId);
+    setEmployees(newEmployees);
+    localStorage.setItem('octomate_employees', JSON.stringify(newEmployees));
     
-    const deleteLog: AuditLogEntry = {
-      id: `audit-${Date.now()}`,
-      employeeId: employee!.id,
-      employeeName: employee!.fullName,
-      timestamp: new Date().toISOString(),
-      userId: currentUser.id,
-      userName: currentUser.name,
-      userRole: currentRole,
-      action: 'delete',
-      description: `Deleted employee profile`,
-    };
-    setAuditLogs([deleteLog, ...auditLogs]);
+    if (employee) {
+      const deleteLog: AuditLogEntry = {
+        id: `audit-${Date.now()}`,
+        employeeId: employee.id,
+        employeeName: employee.fullName,
+        timestamp: new Date().toISOString(),
+        userId: currentUser.id,
+        userName: currentUser.name,
+        userRole: currentRole,
+        action: 'delete',
+        description: `Deleted employee profile`,
+      };
+      const newLogs = [deleteLog, ...auditLogs];
+      localStorage.setItem('octomate_audit_logs', JSON.stringify(newLogs));
+    }
 
     toast.success('Employee profile deleted');
     router.push('/employees');
@@ -155,35 +211,29 @@ export default function EmployeeProfilePage() {
 
   const getStatusColor = (status: EmploymentStatus) => {
     switch (status) {
-      case 'Active':
-        return 'bg-green-500';
-      case 'Probation':
-        return 'bg-blue-500';
-      case 'On Leave':
-        return 'bg-yellow-500';
+      case 'Active': return 'bg-green-500';
+      case 'Probation': return 'bg-blue-500';
+      case 'On Leave': return 'bg-yellow-500';
       case 'Resigned':
-      case 'Terminated':
-        return 'bg-red-500';
-      case 'Retired':
-        return 'bg-gray-500';
-      default:
-        return 'bg-gray-400';
+      case 'Terminated': return 'bg-red-500';
+      case 'Retired': return 'bg-gray-500';
+      default: return 'bg-gray-400';
     }
   };
 
-  if (isLoading) {
+  if (!mounted) {
     return (
       <div className="p-6 space-y-6">
-        <Skeleton className="h-8 w-48" />
+        <div className="h-8 w-48 bg-gray-200 rounded animate-pulse" />
         <div className="flex gap-6">
-          <Skeleton className="h-32 w-32 rounded-xl" />
+          <div className="h-32 w-32 bg-gray-200 rounded-xl animate-pulse" />
           <div className="space-y-3 flex-1">
-            <Skeleton className="h-8 w-64" />
-            <Skeleton className="h-4 w-48" />
-            <Skeleton className="h-4 w-32" />
+            <div className="h-8 w-64 bg-gray-200 rounded animate-pulse" />
+            <div className="h-4 w-48 bg-gray-200 rounded animate-pulse" />
+            <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
           </div>
         </div>
-        <Skeleton className="h-96" />
+        <div className="h-96 bg-gray-200 rounded-xl animate-pulse" />
       </div>
     );
   }
@@ -236,10 +286,10 @@ export default function EmployeeProfilePage() {
           </AlertDescription>
         </Alert>
         <div className="mt-4">
-          <Link href={isSelfProfile(currentUser.employeeId || '') ? `/employees/${currentUser.employeeId}` : '/employees'}>
+          <Link href="/employees">
             <Button variant="outline">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              {isSelfProfile(currentUser.employeeId || '') ? 'View My Profile' : 'Back to Employees'}
+              Back to Employees
             </Button>
           </Link>
         </div>
@@ -248,7 +298,7 @@ export default function EmployeeProfilePage() {
   }
 
   return (
-    <div className="p-6 space-y-6 animate-fade-in">
+    <div className="p-6 space-y-6">
       <PageHeader
         title={employee.fullName}
         breadcrumbs={[
@@ -289,14 +339,14 @@ export default function EmployeeProfilePage() {
                 </AvatarFallback>
               </Avatar>
               <div
-                className={`absolute -bottom-1 -right-1 h-6 w-6 rounded-full border-4 border-white dark:border-gray-800 ${getStatusColor(employee.employmentStatus)}`}
+                className={`absolute -bottom-1 -right-1 h-6 w-6 rounded-full border-4 border-white ${getStatusColor(employee.employmentStatus)}`}
               />
             </div>
 
             <div className="flex-1">
               <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                 <div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-wrap">
                     <h2 className="text-2xl font-bold">{employee.fullName}</h2>
                     <Badge
                       variant={employee.employmentStatus === 'Active' ? 'default' : 'secondary'}
@@ -330,7 +380,7 @@ export default function EmployeeProfilePage() {
                 )}
                 <div className="flex items-center gap-2 text-sm">
                   <Calendar className="h-4 w-4 text-gray-400" />
-                  <span>Joined {format(new Date(employee.employmentDate), 'MMM d, yyyy')}</span>
+                  <span>Joined {formatDate(employee.employmentDate)}</span>
                 </div>
               </div>
             </div>
@@ -340,10 +390,10 @@ export default function EmployeeProfilePage() {
 
       {/* PDPA Consent Notice */}
       {employee.pdpaConsent && (
-        <Alert className="border-green-200 bg-green-50 dark:bg-green-900/20">
+        <Alert className="border-green-200 bg-green-50">
           <Shield className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800 dark:text-green-200">
-            PDPA consent obtained on {format(new Date(employee.pdpaConsentDate || employee.createdAt), 'MMMM d, yyyy')}.
+          <AlertDescription className="text-green-800">
+            PDPA consent obtained on {formatDateLong(employee.pdpaConsentDate || employee.createdAt)}.
             Data is being processed in accordance with Singapore&apos;s Personal Data Protection Act.
           </AlertDescription>
         </Alert>
@@ -443,4 +493,3 @@ export default function EmployeeProfilePage() {
     </div>
   );
 }
-
