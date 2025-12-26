@@ -47,8 +47,8 @@ export const mockEmployees: Employee[] = [
     id: '1',
     fullName: 'Tan Wei Ming',
     alias: 'Wei Ming',
-    nricFin: 'S8812345A',
-    identityNo: 'S8812345A',
+    nricFin: 'S8812345D', // Valid NRIC format
+    identityNo: 'S8812345D',
     cardType: 'NRIC',
     nationality: 'Singaporean',
     dateOfBirth: '1988-06-15',

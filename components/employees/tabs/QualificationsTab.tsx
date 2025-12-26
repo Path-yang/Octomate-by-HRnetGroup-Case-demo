@@ -106,17 +106,22 @@ export function QualificationsTab({ data, onChange, isEditing, permissions }: Qu
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Highest Qualification */}
-      <Card>
+      <Card className="border-t-4 border-t-[#2196F3]">
         <CardHeader>
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-              <GraduationCap className="h-5 w-5 text-emerald-600" />
+            <div className="h-10 w-10 rounded-lg bg-[#2196F3]/10 flex items-center justify-center">
+              <GraduationCap className="h-5 w-5 text-[#2196F3]" />
             </div>
             <div>
               <CardTitle>Qualifications & Experience</CardTitle>
               <CardDescription>
                 Education background and work history
               </CardDescription>
+              {data.updatedAt && (
+                <p className="text-xs text-gray-400 mt-1">
+                  Last modified: {new Date(data.updatedAt).toLocaleDateString('en-SG', { year: 'numeric', month: 'short', day: 'numeric' })}
+                </p>
+              )}
             </div>
           </div>
         </CardHeader>

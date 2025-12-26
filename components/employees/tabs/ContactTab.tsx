@@ -101,17 +101,22 @@ export function ContactTab({ data, onChange, isEditing, permissions }: ContactTa
   );
 
   return (
-    <Card className="animate-fade-in">
+    <Card className="animate-fade-in border-t-4 border-t-[#4CAF50]">
       <CardHeader>
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-            <Phone className="h-5 w-5 text-purple-600" />
+          <div className="h-10 w-10 rounded-lg bg-[#4CAF50]/10 flex items-center justify-center">
+            <Phone className="h-5 w-5 text-[#4CAF50]" />
           </div>
           <div>
             <CardTitle>Contact Information</CardTitle>
             <CardDescription>
               Phone numbers, email, and address details
             </CardDescription>
+            {data.updatedAt && (
+              <p className="text-xs text-gray-400 mt-1">
+                Last modified: {new Date(data.updatedAt).toLocaleDateString('en-SG', { year: 'numeric', month: 'short', day: 'numeric' })}
+              </p>
+            )}
           </div>
         </div>
       </CardHeader>

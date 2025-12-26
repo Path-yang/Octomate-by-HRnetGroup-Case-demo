@@ -38,12 +38,12 @@ interface ProfileFormProps {
 }
 
 const tabs = [
-  { id: 'core', label: 'Core Identity', icon: User, restricted: true },
-  { id: 'employment', label: 'Employment', icon: Briefcase },
-  { id: 'contact', label: 'Contact', icon: Phone },
-  { id: 'banking', label: 'Banking', icon: Wallet, sensitive: true },
-  { id: 'qualifications', label: 'Qualifications', icon: GraduationCap },
-  { id: 'emergency', label: 'Emergency', icon: Heart },
+  { id: 'core', label: 'Core Identity', icon: User, restricted: true, color: '#007A3D' },
+  { id: 'employment', label: 'Employment', icon: Briefcase, color: '#00A651' },
+  { id: 'contact', label: 'Contact', icon: Phone, color: '#4CAF50' },
+  { id: 'banking', label: 'Banking', icon: Wallet, sensitive: true, color: '#FF5722' },
+  { id: 'qualifications', label: 'Qualifications', icon: GraduationCap, color: '#2196F3' },
+  { id: 'emergency', label: 'Emergency', icon: Heart, color: '#9C27B0' },
 ];
 
 export function ProfileForm({ employee, onSave, onAuditLog, isNew = false }: ProfileFormProps) {
@@ -273,17 +273,20 @@ export function ProfileForm({ employee, onSave, onAuditLog, isNew = false }: Pro
                   'flex-1 min-w-[120px] flex items-center gap-2 py-2.5 data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm rounded-md transition-all',
                   tab.sensitive && 'relative'
                 )}
+                style={{
+                  borderBottom: activeTab === tab.id ? `3px solid ${tab.color}` : 'none',
+                }}
               >
-                <tab.icon className="h-4 w-4" />
+                <tab.icon className="h-4 w-4" style={{ color: tab.color }} />
                 <span className="hidden sm:inline">{tab.label}</span>
                 {tab.restricted && (
-                  <Badge variant="outline" className="text-[9px] px-1 py-0 hidden lg:flex">
-                    Restricted
+                  <Badge variant="outline" className="text-[9px] px-1 py-0 hidden lg:flex" style={{ borderColor: tab.color, color: tab.color }}>
+                    🔒
                   </Badge>
                 )}
                 {tab.sensitive && permissions.banking.visible && (
-                  <Badge variant="destructive" className="text-[9px] px-1 py-0 hidden lg:flex">
-                    Sensitive
+                  <Badge className="text-[9px] px-1 py-0 hidden lg:flex" style={{ backgroundColor: tab.color }}>
+                    🔒🔒
                   </Badge>
                 )}
               </TabsTrigger>

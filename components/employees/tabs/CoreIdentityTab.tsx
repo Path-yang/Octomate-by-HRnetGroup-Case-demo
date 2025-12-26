@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { CalendarIcon, Lock, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { Employee, CardType, Gender, Race, Religion, MaritalStatus, FieldPermission } from '@/lib/types';
-import { validateNRIC, maskNRIC, calculateAge } from '@/lib/validations';
+import { validateNRIC, maskNRIC, calculateAge, validateDateOfBirth } from '@/lib/validations';
 import { NATIONALITIES } from '@/lib/mock-data';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
@@ -41,7 +41,7 @@ interface CoreIdentityTabProps {
   };
 }
 
-const cardTypes: CardType[] = ['NRIC', 'FIN', 'Passport'];
+const cardTypes: CardType[] = ['NRIC', 'FIN', 'Passport', 'Work Permit'];
 const genders: Gender[] = ['Male', 'Female', 'Other'];
 const races: Race[] = ['Chinese', 'Malay', 'Indian', 'Eurasian', 'Others'];
 const religions: Religion[] = ['Buddhism', 'Christianity', 'Islam', 'Hinduism', 'Taoism', 'No Religion', 'Others'];
@@ -49,13 +49,25 @@ const maritalStatuses: MaritalStatus[] = ['Single', 'Married', 'Divorced', 'Wido
 
 export function CoreIdentityTab({ data, onChange, isEditing, permissions }: CoreIdentityTabProps) {
   const [nricError, setNricError] = useState<string>('');
+  const [dobError, setDobError] = useState<string>('');
   const [age, setAge] = useState<number | null>(null);
 
   useEffect(() => {
     if (data.dateOfBirth) {
       setAge(calculateAge(data.dateOfBirth));
+      const validation = validateDateOfBirth(data.dateOfBirth);
+      setDobError(validation.valid ? '' : validation.message);
     }
   }, [data.dateOfBirth]);
+
+  const handleDobChange = (date: Date | undefined) => {
+    if (date) {
+      const dateStr = date.toISOString().split('T')[0];
+      onChange('dateOfBirth', dateStr);
+      const validation = validateDateOfBirth(dateStr);
+      setDobError(validation.valid ? '' : validation.message);
+    }
+  };
 
   const handleNricChange = (value: string) => {
     onChange('nricFin', value.toUpperCase());
@@ -110,19 +122,29 @@ export function CoreIdentityTab({ data, onChange, isEditing, permissions }: Core
   );
 
   return (
-    <Card className="animate-fade-in">
+    <Card className="animate-fade-in border-t-4 border-t-[#007A3D]">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              Core Identity Information
-              <Badge variant="outline" className="text-xs">
-                Restricted
-              </Badge>
-            </CardTitle>
-            <CardDescription>
-              Personal identification details as per official documents
-            </CardDescription>
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-[#007A3D]/10 flex items-center justify-center">
+              <Lock className="h-5 w-5 text-[#007A3D]" />
+            </div>
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                Core Identity Information
+                <Badge variant="outline" className="text-xs bg-[#007A3D]/10 text-[#007A3D] border-[#007A3D]/30">
+                  🔒 Restricted
+                </Badge>
+              </CardTitle>
+              <CardDescription>
+                Personal identification details as per official documents
+              </CardDescription>
+              {data.updatedAt && (
+                <p className="text-xs text-gray-400 mt-1">
+                  Last modified: {new Date(data.updatedAt).toLocaleDateString('en-SG', { year: 'numeric', month: 'short', day: 'numeric' })}
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </CardHeader>
@@ -236,7 +258,7 @@ export function CoreIdentityTab({ data, onChange, isEditing, permissions }: Core
           </FieldWrapper>
 
           {/* Date of Birth */}
-          <FieldWrapper label="Date of Birth" required permission={permissions.dateOfBirth}>
+          <FieldWrapper label="Date of Birth" required permission={permissions.dateOfBirth} error={dobError}>
             {isEditing && permissions.dateOfBirth.write ? (
               <Popover>
                 <PopoverTrigger asChild>
@@ -244,7 +266,8 @@ export function CoreIdentityTab({ data, onChange, isEditing, permissions }: Core
                     variant="outline"
                     className={cn(
                       'w-full justify-start text-left font-normal',
-                      !data.dateOfBirth && 'text-muted-foreground'
+                      !data.dateOfBirth && 'text-muted-foreground',
+                      dobError && 'border-red-500'
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
@@ -255,7 +278,8 @@ export function CoreIdentityTab({ data, onChange, isEditing, permissions }: Core
                   <Calendar
                     mode="single"
                     selected={data.dateOfBirth ? new Date(data.dateOfBirth) : undefined}
-                    onSelect={(date) => onChange('dateOfBirth', date?.toISOString().split('T')[0])}
+                    onSelect={handleDobChange}
+                    disabled={(date) => date > new Date() || date < new Date('1924-01-01')}
                     initialFocus
                   />
                 </PopoverContent>

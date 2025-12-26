@@ -1,6 +1,6 @@
 // Core Employee Types for Octomate HR System
 
-export type CardType = 'NRIC' | 'FIN' | 'Passport';
+export type CardType = 'NRIC' | 'FIN' | 'Passport' | 'Work Permit';
 export type Gender = 'Male' | 'Female' | 'Other';
 export type Race = 'Chinese' | 'Malay' | 'Indian' | 'Eurasian' | 'Others';
 export type Religion = 'Buddhism' | 'Christianity' | 'Islam' | 'Hinduism' | 'Taoism' | 'No Religion' | 'Others';

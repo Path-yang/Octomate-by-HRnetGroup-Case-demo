@@ -151,24 +151,28 @@ export function BankingTab({ data, onChange, isEditing, permissions }: BankingTa
 
   return (
     <>
-      <Card className="animate-fade-in">
+      <Card className="animate-fade-in border-t-4 border-t-[#FF5722]">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                <Wallet className="h-5 w-5 text-amber-600" />
+              <div className="h-10 w-10 rounded-lg bg-[#FF5722]/10 flex items-center justify-center">
+                <Wallet className="h-5 w-5 text-[#FF5722]" />
               </div>
               <div>
                 <CardTitle className="flex items-center gap-2">
                   Banking & Payroll
-                  <Badge variant="destructive" className="text-xs">
-                    <Lock className="h-3 w-3 mr-1" />
-                    Highly Restricted
+                  <Badge variant="destructive" className="text-xs bg-[#FF5722] border-[#FF5722]">
+                    🔒🔒 Highly Restricted
                   </Badge>
                 </CardTitle>
                 <CardDescription>
                   Bank account details for salary disbursement
                 </CardDescription>
+                {data.updatedAt && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    Last modified: {new Date(data.updatedAt).toLocaleDateString('en-SG', { year: 'numeric', month: 'short', day: 'numeric' })}
+                  </p>
+                )}
               </div>
             </div>
           </div>

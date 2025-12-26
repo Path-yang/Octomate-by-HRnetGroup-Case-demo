@@ -267,6 +267,36 @@ export function calculateAge(dateOfBirth: string): number {
 }
 
 /**
+ * Validates date of birth
+ * - Cannot be future date
+ * - Reasonable age range (16-100)
+ */
+export function validateDateOfBirth(dateOfBirth: string): { valid: boolean; message: string } {
+  if (!dateOfBirth) {
+    return { valid: false, message: 'Date of birth is required' };
+  }
+
+  const dob = new Date(dateOfBirth);
+  const today = new Date();
+  
+  // Check if future date
+  if (dob > today) {
+    return { valid: false, message: 'Date of birth cannot be in the future' };
+  }
+  
+  // Check age range (16-100)
+  const age = calculateAge(dateOfBirth);
+  if (age < 16) {
+    return { valid: false, message: 'Employee must be at least 16 years old' };
+  }
+  if (age > 100) {
+    return { valid: false, message: 'Please enter a valid date of birth' };
+  }
+  
+  return { valid: true, message: '' };
+}
+
+/**
  * Calculates retirement year based on DOB and retirement age
  */
 export function calculateRetirementYear(dateOfBirth: string, retirementAge: number = 63): number {
