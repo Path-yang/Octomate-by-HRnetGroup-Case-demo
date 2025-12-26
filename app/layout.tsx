@@ -20,6 +20,11 @@ export const metadata: Metadata = {
   description: "A comprehensive HR Employee Profile Management System demo for PM internship assessment. Built with Next.js 14, TypeScript, and Tailwind CSS.",
   keywords: ["HR", "Employee Management", "HRMS", "Singapore", "HRnet", "Octomate"],
   authors: [{ name: "HRnet Group" }],
+  icons: {
+    icon: "/logo.jpeg",
+    shortcut: "/logo.jpeg",
+    apple: "/logo.jpeg",
+  },
 };
 
 export default function RootLayout({
